@@ -30,12 +30,12 @@ jobs:
 
             - name: Tar dist file
               run: |
-                  tar -zcvf web.tar.gz dist
+                  tar -zcvf dist.tar.gz dist
             - name: Scp_upload_tar_file
               uses: garygrossgarten/github-action-scp@release
               with:
-                  local: "web.tar.gz"
-                  remote: "/home/kid/web/web.tar.gz"
+                  local: "dist.tar.gz"
+                  remote: "/home/kid/web/dist.tar.gz"
                   host: ${{secrets.HOST}}
                   username: ${{secrets.USERNAME}}
                   password: ${{secrets.PASSWORD}}
@@ -50,5 +50,5 @@ jobs:
                   script: |
                       cd /home/kid/web
                       rm -rf dist
-                      tar -zxvf web.tar.gz
-                      mv dist web
+                      tar -zxvf dist.tar.gz
+                      rm -rf dist.tar.gz
