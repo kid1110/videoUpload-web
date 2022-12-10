@@ -4,7 +4,6 @@ import Log from "@/views/Log.vue"
 import Code from "@/views/Code.vue"
 import Envirnment from "@/views/Envirnment.vue"
 import Auth from "@/views/Auth.vue"
-import Main from "@/views/Main.vue"
 
 import { createRouter, createWebHistory } from "vue-router"
 
