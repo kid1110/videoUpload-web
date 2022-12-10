@@ -51,4 +51,4 @@ jobs:
                       cd /home/kid/web
                       rm -rf dist
                       tar -zxvf web.tar.gz
-                      mv dist /home/kid/web/web
+                      mv dist web
