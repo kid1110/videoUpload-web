@@ -25,7 +25,6 @@ jobs:
               with:
                   node-version: "${{ matrix.node-version }}"
                   cache: "npm"
-            - run: npm cache clean -f
             - run: npm ci
             - run: npm run build
 
@@ -35,7 +34,7 @@ jobs:
             - name: Scp_upload_tar_file
               uses: garygrossgarten/github-action-scp@release
               with:
-                  local: "we.tar.gz"
+                  local: "web.tar.gz"
                   remote: "/home/kid/web/web.tar.gz"
                   host: ${{secrets.HOST}}
                   username: ${{secrets.USERNAME}}
