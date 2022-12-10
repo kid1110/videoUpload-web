@@ -1,9 +1,9 @@
-import Login from "@/views/Login.vue"
-import Home from "@/views/Home.vue"
-import Log from "@/views/Log.vue"
-import Code from "@/views/Code.vue"
-import Envirnment from "@/views/Envirnment.vue"
-import Auth from "@/views/Auth.vue"
+import Login from "../views/Login.vue"
+import Home from "../views/Home.vue"
+import Log from "../views/Log.vue"
+import Code from "../views/Code.vue"
+import Envirnment from "../views/Envirnment.vue"
+import Auth from "../views/Auth.vue"
 
 import { createRouter, createWebHistory } from "vue-router"
 
