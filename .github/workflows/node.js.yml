@@ -4,28 +4,51 @@
 name: Node.js CI
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    push:
+        branches: ["main"]
+    pull_request:
+        branches: ["main"]
 
 jobs:
-  build:
+    build:
+        runs-on: ubuntu-latest
 
-    runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                node-version: [14.x, 16.x, 18.x]
+                # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
-    strategy:
-      matrix:
-        node-version: [14.x, 16.x, 18.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+        steps:
+            - uses: actions/checkout@v3
+            - name: Use Node.js ${{ matrix.node-version }}
+              uses: actions/setup-node@v3
+              with:
+                  node-version: ${{ matrix.node-version }}
+                  cache: "npm"
+            - run: npm ci
+            - run: npm run build --if-present
 
-    steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: npm ci
-    - run: npm run build --if-present
-    - run: npm test
+            - name: Tar dist file
+              run: |
+                  tar -zcvf web.tar.gz dist
+            - name: Scp_upload_tar_file
+              uses: garygrossgarten/github-action-scp@release
+              with:
+                  local: "we.tar.gz"
+                  remote: "/home/kid/web/web.tar.gz"
+                  host: ${{secrets.HOST}}
+                  username: ${{secrets.USERNAME}}
+                  password: ${{secrets.PASSWORD}}
+                  port: ${{secrets.PORT}}
+            - name: Deploy_app_tar
+              uses: appleboy/ssh-action@master
+              with:
+                  host: ${{secrets.HOST}}
+                  username: ${{secrets.USERNAME}}
+                  password: ${{secrets.PASSWORD}}
+                  port: ${{secrets.PORT}}
+                  script: |
+                      cd /home/kid/web
+                      rm -rf dist
+                      tar -zxvf web.tar.gz
+                      mv dist /home/kid/web/web
