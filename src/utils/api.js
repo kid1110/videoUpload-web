@@ -9,3 +9,16 @@ export function loginRequest(username, password) {
         data: qs.stringify({ username: username, password: password })
     })
 }
+
+export function getBrokerInfo() {
+    return axios({
+        url: `${base.url}/web/getBrokenInfo`,
+        method: "get"
+    })
+}
+export function getVideoInfo() {
+    return axios({
+        url: `${base.url}/web/getVideoInfo`,
+        method: "get"
+    })
+}

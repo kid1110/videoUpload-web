@@ -2,22 +2,21 @@ import axios from "axios"
 import { ElLoading, ElMessage } from "element-plus"
 import router from "@/router/router.js"
 let loading
-function startLoading() {
-    loading = ElLoading.service({
-        lock: true,
-        text: "加载中....",
-        background: "rgba(0,0,0,0.7)"
-    })
-}
+// function startLoading() {
+//     loading = ElLoading.service({
+//         lock: true,
+//         text: "加载中....",
+//         background: "rgba(0,0,0,0.7)"
+//     })
+// }
 
-function endLoading() {
-    loading.close()
-}
+// function endLoading() {
+//     loading.close()
+// }
 
 //请求拦截
 axios.interceptors.request.use(
     (config) => {
-        startLoading()
         config.headers.contentType = "application/x-www-form-urlencoded"
         if (localStorage.getItem("eToken")) {
             config.headers.Authorization = localStorage.getItem("eToken")
@@ -25,7 +24,6 @@ axios.interceptors.request.use(
         return config
     },
     (error) => {
-        endLoading()
         return Promise.reject(error)
     }
 )
@@ -36,7 +34,6 @@ axios.interceptors.response.use(
         console.log(response.data)
         console.log(response.data.code !== 1)
         console.log(response.data.code === 1)
-        endLoading()
         if (response.data.code !== 1) {
             if (response.data.code === -502) {
                 if (localStorage.getItem("eToken")) {
@@ -53,7 +50,6 @@ axios.interceptors.response.use(
         return response
     },
     (error) => {
-        endLoading()
         ElMessage.error("请求错误")
         return Promise.reject(error)
     }
