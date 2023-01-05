@@ -31,9 +31,6 @@ axios.interceptors.request.use(
 //响应拦截
 axios.interceptors.response.use(
     (response) => {
-        console.log(response.data)
-        console.log(response.data.code !== 1)
-        console.log(response.data.code === 1)
         if (response.data.code !== 1) {
             if (response.data.code === -502) {
                 if (localStorage.getItem("eToken")) {

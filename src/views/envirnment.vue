@@ -16,7 +16,7 @@
             <el-card class="box-card" shadow="hover">
                 <template #header>
                     <div class="card-header">
-                        <span>配置信息</span>
+                        <span>视频信息</span>
                     </div>
                 </template>
                 <div v-for="item in videoInfos" :key="item.label" class="text item">{{ item.name + item.data }}</div>
@@ -38,16 +38,27 @@
         >
     </el-row>
     <el-divider v-if="loadContainer" />
-    <el-row class="container-row"> </el-row>
-    <el-col :span="6" v-if="loadContainer"><div class="grid-content ep-bg-purple-light" /></el-col>
+    <el-scrollbar height="900px">
+        <div v-if="getImage">
+            <ImageCard v-for="item in imagesInfos" :key="item.Id" :id="item.Id" :created="changeTimes(item.Created * 1000)" :RepoTags="item.RepoTags" :Size="item.Size" @refresh-images="getImaget"></ImageCard>
+        </div>
+        <div v-if="getContainer">
+            <ContainerCard v-for="item in containerInfos" :key="item.Id" :Id="item.Id" :Image="item.Image" :ImageID="item.ImageID" :Status="item.Status" :PrivatePort="item.Ports.length > 0 ? item.Ports[0].PrivatePort : null" :PublicPort="item.Ports.length > 0 ? item.Ports[0].PublicPort : null" :State="item.State" :Names="item.Names" @refresh-containers="getDockerContainer"></ContainerCard>
+        </div>
+    </el-scrollbar>
 </template>
 
-<script lang="ts">
+<script>
 import { ElMessage } from "element-plus"
 import { UploadFilled } from "@element-plus/icons-vue"
-import { getBrokerInfo, getVideoInfo } from "../utils/api.js"
-
+import { getBrokerInfo, getVideoInfo, getImages, getContainers } from "../utils/api.js"
+import ContainerCard from "@/components/ContainerCard.vue"
+import ImageCard from "@/components/ImageCard.vue"
 export default {
+    components: {
+        ContainerCard,
+        ImageCard
+    },
     data() {
         return {
             loadContainer: false,
@@ -55,6 +66,8 @@ export default {
             showContainers: "查看docker容器",
             chooseAction: "查看docker镜像",
             timer: { value: null },
+            getImage: false,
+            getContainer: false,
             brokerInfos: [
                 {
                     name: "ip地址: ",
@@ -118,42 +131,89 @@ export default {
                     data: 0,
                     label: "containerNum"
                 }
-            ]
+            ],
+            imagesInfos: [],
+            containerInfos: []
         }
     },
     mounted() {
-        this.timer.value = setInterval(async () => {
-            await getBrokerInfo().then((res) => {
-                if (res.data.code === 1) {
-                    console.log(res.data.data)
-                    console.log(res.data.data["ip"])
-                    this.brokerInfos.map((item) => {
-                        item.data = res.data.data[item.label]
-                    })
-                    console.log(this.brokerInfos)
-                }
-            })
-        }, 1000)
-        this.timer.second = setInterval(async () => {
-            await getVideoInfo().then((res) => {
-                this.videoInfos.map((item) => {
-                    item.data = res.data.data[item.label]
-                })
-            })
-        }, 1000)
+        // this.timer.value = setInterval(async () => {
+        //     await getBrokerInfo().then((res) => {
+        //         if (res.data.code === 1) {
+        //             this.brokerInfos.map((item) => {
+        //                 item.data = res.data.data[item.label]
+        //             })
+        //         }
+        //     })
+        // }, 1000)
+        // this.timer.second = setInterval(async () => {
+        //     await getVideoInfo().then((res) => {
+        //         if (res.data.code === 1) {
+        //             this.videoInfos.map((item) => {
+        //                 item.data = res.data.data[item.label]
+        //             })
+        //         }
+        //     })
+        // }, 1000)
     },
     unmounted() {
-        clearInterval(this.timer.value)
+        // clearInterval(this.timer.value)
     },
 
     methods: {
         getDockerImages() {
+            this.loadContainer = true
             if (this.chooseAction === this.showImages) {
-                this.loadContainer = !this.loadContainer
+                this.getImage = true
+                this.getContainer = false
+                getImages().then((res) => {
+                    if (res.data.code === 1) {
+                        this.imagesInfos = res.data.data
+                        console.log(this.imagesInfos)
+                    }
+                })
+            } else if (this.chooseAction === this.showContainers) {
+                console.log("ttt")
+                this.getImage = false
+                this.getContainer = true
+                getContainers().then((res) => {
+                    if (res.data.code === 1) {
+                        this.containerInfos = res.data.data
+                        console.log(this.containerInfos)
+                    }
+                })
             }
         },
         handleCommpand(command) {
             this.chooseAction = command
+            if (this.chooseAction === this.showImages) {
+                this.getImage = true
+                this.getContainer = false
+            } else {
+                this.getImage = false
+                this.getContainer = true
+            }
+        },
+        changeTimes(tim) {
+            let time = new Date(tim)
+            let data = time.toLocaleDateString().replace(/\//g, "-") + " " + time.toTimeString().substr(0, 8)
+            return data
+        },
+        getDockerContainer() {
+            getContainers().then((res) => {
+                if (res.data.code === 1) {
+                    this.containerInfos = res.data.data
+                    console.log(this.containerInfos)
+                }
+            })
+        },
+        getImaget() {
+            getImages().then((res) => {
+                if (res.data.code === 1) {
+                    this.imagesInfos = res.data.data
+                    console.log(this.imagesInfos)
+                }
+            })
         }
     }
 }
@@ -195,10 +255,8 @@ export default {
 .box-card {
     width: 480px;
 }
-// .server-data {
-//     display: flex;
-//     justify-content: space-between;
-//     flex-wrap: wrap;
-//     flex-direction: column;
-// }
+.server-data {
+    display: grid;
+    grid-template-columns: 50% 50%;
+}
 </style>
