@@ -6,6 +6,7 @@
                 <div class="container-button">
                     <el-button class="container-stopButton" type="primary" v-if="State === 'running'" @click="stopContainer" :loading="isStoping" :disabled="isKilling">停止容器</el-button>
                     <el-button class="container-stopButton" type="primary" v-if="State === 'exited'" @click="restartContainer" :loading="isRestarting" :disabled="isRestarting">重启容器</el-button>
+                    <el-button class="container-startButton" type="primary" v-if="State === 'created'" :loading="isStarting" @click="startContainer">启动容器</el-button>
                     <el-button class="container-killButton" type="danger" :disabled="isStoping || isRestarting" :loading="isKilling" @click="killContainer">删除容器</el-button>
                 </div>
             </div>
@@ -43,15 +44,19 @@
         <div v-if="State === 'running'">
             <el-progress :percentage="100" status="success" />
         </div>
-        <div v-if="State !== 'running'">
+        <div v-if="State === 'exited'">
             <el-progress :percentage="100" status="exception" />
+        </div>
+        <div v-if="State === 'created'">
+            <el-progress :percentage="100" />
         </div>
     </el-card>
 </template>
 
 <script>
-import { stopContainers, killContainers, restartContainers } from "../utils/api.js"
+import { stopContainers, killContainers, restartContainers, startContainers } from "../utils/api.js"
 import { ElMessage } from "element-plus"
+
 export default {
     props: {
         Id: String,
@@ -76,7 +81,8 @@ export default {
         return {
             isStoping: false,
             isKilling: false,
-            isRestarting: false
+            isRestarting: false,
+            isStarting: false
         }
     },
     methods: {
@@ -153,6 +159,25 @@ export default {
                     console.log(err)
                     this.isRestarting = true
                 })
+        },
+        startContainer() {
+            this.isStarting = true
+            startContainers(this.Id).then((res) => {
+                if (res.data.code === 1) {
+                    ElMessage.success({
+                        duration: 1000,
+                        message: "启动" + this.Names[0] + "成功"
+                    })
+                    this.isStarting = false
+                    this.$emit("refresh-containers")
+                } else {
+                    ElMessage.error({
+                        duration: 1000,
+                        message: "启动" + this.Names[0] + "失败"
+                    })
+                    this.isStarting = false
+                }
+            })
         }
     }
 }

@@ -34,24 +34,44 @@
                     </el-dropdown-menu>
                 </template>
             </el-dropdown>
-            <el-button type="primary" style="margin-left: 15px">上传docker镜像</el-button></el-col
+            <el-button type="primary" style="margin-left: 15px" @click="uploadImages">上传docker镜像</el-button></el-col
         >
     </el-row>
-    <el-divider v-if="loadContainer" />
-    <el-scrollbar height="900px">
-        <div v-if="getImage">
-            <ImageCard v-for="item in imagesInfos" :key="item.Id" :id="item.Id" :created="changeTimes(item.Created * 1000)" :RepoTags="item.RepoTags" :Size="item.Size" @refresh-images="getImaget"></ImageCard>
+    <el-divider />
+    <div v-if="loadContainer">
+        <el-scrollbar height="900px">
+            <div v-if="getImage">
+                <ImageCard v-for="item in imagesInfos" :key="item.Id" :id="item.Id" :created="changeTimes(item.Created * 1000)" :RepoTags="item.RepoTags" :Size="item.Size" @refresh-images="getImaget"></ImageCard>
+            </div>
+            <div v-if="getContainer">
+                <ContainerCard v-for="item in containerInfos" :key="item.Id" :Id="item.Id" :Image="item.Image" :ImageID="item.ImageID" :Status="item.Status" :PrivatePort="item.Ports.length > 0 ? item.Ports[0].PrivatePort : null" :PublicPort="item.Ports.length > 0 ? item.Ports[0].PublicPort : null" :State="item.State" :Names="item.Names" @refresh-containers="getDockerContainer"></ContainerCard>
+            </div>
+        </el-scrollbar>
+    </div>
+    <div v-if="uploadIm" class="docker-upload">
+        <div class="upload-images">
+            <el-form :label-position="labelPosition" label-width="100px" :model="formLabelAlign" class="docker-upload form" :rules="rules" ref="uploadForm">
+                <el-form-item label="用户名" prop="dockerUsername">
+                    <el-input v-model="formLabelAlign.dockerUsername" />
+                </el-form-item>
+                <el-form-item label="密码" prop="dockerPassword">
+                    <el-input v-model="formLabelAlign.dockerPassword" type="password" show-password />
+                </el-form-item>
+                <el-form-item label="仓库名" prop="dockerRegistory">
+                    <el-input v-model="formLabelAlign.dockerRegistory" placeholder="请输入仓库地址以及tag:如kid1110/video-test:latest" />
+                </el-form-item>
+                <el-form-item class="upload-button">
+                    <el-button type="primary" @click="upload" :loading="pullIm">上传镜像</el-button>
+                </el-form-item>
+            </el-form>
         </div>
-        <div v-if="getContainer">
-            <ContainerCard v-for="item in containerInfos" :key="item.Id" :Id="item.Id" :Image="item.Image" :ImageID="item.ImageID" :Status="item.Status" :PrivatePort="item.Ports.length > 0 ? item.Ports[0].PrivatePort : null" :PublicPort="item.Ports.length > 0 ? item.Ports[0].PublicPort : null" :State="item.State" :Names="item.Names" @refresh-containers="getDockerContainer"></ContainerCard>
-        </div>
-    </el-scrollbar>
+    </div>
 </template>
 
 <script>
 import { ElMessage } from "element-plus"
 import { UploadFilled } from "@element-plus/icons-vue"
-import { getBrokerInfo, getVideoInfo, getImages, getContainers } from "../utils/api.js"
+import { getBrokerInfo, getVideoInfo, getImages, getContainers, pullImages } from "../utils/api.js"
 import ContainerCard from "@/components/ContainerCard.vue"
 import ImageCard from "@/components/ImageCard.vue"
 export default {
@@ -62,12 +82,21 @@ export default {
     data() {
         return {
             loadContainer: false,
+            uploadIm: false,
             showImages: "查看docker镜像",
             showContainers: "查看docker容器",
             chooseAction: "查看docker镜像",
+            pullIm: false,
+            formLabelAlign: { dockerUsername: "", dockerPassword: "", dockerRegistory: "" },
             timer: { value: null },
             getImage: false,
             getContainer: false,
+            rules: {
+                dockerUsername: [{ required: true, message: "请输入您的dockerhub账号", trigger: "blur" }],
+                dockerPassword: [{ required: true, message: "请输入您的dockerhub密码", trigger: "blur" }],
+                dockerRegistory: [{ required: true, message: "请输入您的镜像仓库", trigger: "blur" }]
+            },
+
             brokerInfos: [
                 {
                     name: "ip地址: ",
@@ -161,8 +190,13 @@ export default {
     },
 
     methods: {
+        uploadImages() {
+            this.loadContainer = false
+            this.uploadIm = true
+        },
         getDockerImages() {
             this.loadContainer = true
+            this.uploadIm = false
             if (this.chooseAction === this.showImages) {
                 this.getImage = true
                 this.getContainer = false
@@ -214,6 +248,31 @@ export default {
                     console.log(this.imagesInfos)
                 }
             })
+        },
+        upload() {
+            this.pullIm = true
+            this.$refs.uploadForm.validate((v) => {
+                if (!v) {
+                    return false
+                }
+                this.uploadImage()
+            })
+            this.pullIm = false
+        },
+        uploadImage() {
+            pullImages(this.formLabelAlign.dockerUsername, this.formLabelAlign.dockerPassword, this.formLabelAlign.dockerRegistory)
+                .then((res) => {
+                    console.log(res)
+                    if (res.data.code === 1) {
+                        ElMessage.success({
+                            duration: 1000,
+                            message: "拉取镜像" + "成功"
+                        })
+                    }
+                })
+                .catch((err) => {
+                    console.log(err)
+                })
         }
     }
 }
@@ -258,5 +317,26 @@ export default {
 .server-data {
     display: grid;
     grid-template-columns: 50% 50%;
+}
+.docker-upload {
+    margin-top: 8px;
+    height: 800px;
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    flex-direction: column;
+}
+.docker-upload form {
+    display: flex;
+    width: 600px;
+    justify-content: center;
+}
+.upload-images {
+    display: flex;
+    justify-content: center;
+}
+.upload-button {
+    display: flex;
+    justify-content: center;
 }
 </style>
